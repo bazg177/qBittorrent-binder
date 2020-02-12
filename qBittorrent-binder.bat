@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 
 rem ------------------------Setup----------------------------
+rem Select your network interface in the advanced tab of the qBittorent gui and save
 rem Set interfaceName, expectedAdapterIP & qBittorrentLogFilePath below
 rem You can get adapter info by running the following: netsh interface ip show address
 rem Add a scheduled task to repeat at desired interval i.e. every 2 minutes
