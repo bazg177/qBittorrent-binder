@@ -1,26 +1,34 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem *****************************************************************************************************************************
-rem Update the following constants to match your needs
-rem Get adapter info using the following: netsh interface ip show address
+rem ------------------------Setup----------------------------
+rem Set interfaceName, expectedAdapterIP & qBittorrentLogFilePath below
+rem You can get adapter info by running the following: netsh interface ip show address
 rem Add a scheduled task to repeat at desired interval i.e. every 2 minutes
-rem qBittorrent should not be set to start up automatically, instead it is brought up by this script
-rem expectedAdapterIP is a pattern that your Adapter IP should begin with when properly connected..
-rem in my case this is 10.153.*.*
-rem Before running, take a backup of your qBittorrent.ini from %appdata%\qBittorrent
-set interfaceName="Windscribe IKEv2"
-set expectedAdapterIP=10.153
-set qBittorrentLogFilePath="C:\Scripts\Logs\qbittorrent-log.txt"
-rem *****************************************************************************************************************************
+rem Make sure the script has permissions to kill the qBittorent process
 
-set qBittorrentExeFile="%ProgramFiles%\qbittorrent\qbittorrent.exe"
-set qBittorrentConfPath=%appdata%\qBittorrent
+rem ------------------------Notes----------------------------
+rem Before running, take a backup of your qBittorrent.ini from %appdata%\qBittorrent
+rem qBittorrent should not be set to start up automatically, instead it is brought up by this script
+rem If you are updating your config you may want to disable the script temporarily in case of conflicts
+rem expectedAdapterIP is a pattern that your Adapter IP should begin with when properly connected
+rem in my case this is 10.117.*.*
+
+rem ********************************************************************************************************
+set interfaceName="Ethernet 2"
+set expectedAdapterIP=10.117
+set qBittorrentLogFilePath="C:\Scripts\Logs\qbittorrent-log.txt"
+rem ********************************************************************************************************
+
 set msgPrefix=[%date% - %time%]
+set qBittorrentConfPath=%appdata%\qBittorrent
 echo %msgPrefix% qBittorrentConfPath: %qBittorrentConfPath%
 set qBittorrentConfFilePath=%qBittorrentConfPath%\qBittorrent.ini
 echo %msgPrefix% qBittorrentConfFilePath: %qBittorrentConfFilePath%
 set qbittorrentProcess=qbittorrent.exe
+echo %msgPrefix% qbittorrentProcess: %qbittorrentProcess%
+set qBittorrentExeFile="%ProgramFiles%\qbittorrent\%qbittorrentProcess%"
+echo %msgPrefix% qBittorrentExeFile: %qBittorrentExeFile%
 
 rem find the ip assigned to the interface
 for /f "tokens=3" %%i in ('netsh interface ip show address %interfaceName% ^| findstr "IP Address"') do set adapterIP=%%i
@@ -45,7 +53,7 @@ if not errorlevel 1 (
 		echo %msgPrefix% qBittorrentConf IP is correct :^)
 		
 		rem check if the qbittorrent process is running
-		FOR /f %%x IN ('tasklist /nh /fi "imagename eq %qbittorrentProcess%"') do (
+		for /f %%x in ('tasklist /nh /fi "imagename eq %qbittorrentProcess%"') do (
 			if %%x == %qbittorrentProcess% (
 				rem qbittorrent is running.. nothing to do
 				set msg=%msgPrefix% qBittorrent is ok :^)
@@ -69,6 +77,8 @@ if not errorlevel 1 (
 		echo %msgPrefix% qBittorrentConf IP Incorrect.. updating from !qBittorrentConfIP! to %adapterIP% !
 		
 		set dateStamp=%DATE:~6,4%_%DATE:~3,2%_%DATE:~0,2%__%TIME:~0,2%_%TIME:~3,2%_%TIME:~6,2%
+		rem replace spaces with 0's
+		set dateStamp=!dateStamp: =0!
 		echo %msgPrefix% dateStamp: !dateStamp!
 		
 		set backupFilePath=%qBittorrentConfPath%\backups\qBittorrent_backup_!dateStamp!.ini
