@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 rem ------------------------Setup----------------------------
 rem Select your network interface and current IP in the advanced tab of the qBittorent gui and save
-rem Set interfaceName, expectedAdapterIP & qBittorrentLogFilePath below
+rem Set interfaceName, expectedAdapterIP & logFilePath below
 rem You can get adapter info by running the following: netsh interface ip show address
 rem Add a scheduled task to repeat at desired interval i.e. every 2 minutes
 rem Make sure the script has permissions to kill the qBittorent process
@@ -19,13 +19,13 @@ rem in my case this is 10.117.*.*
 rem ********************************************************************************************************
 set interfaceName=Ethernet 2
 set expectedAdapterIP=10.117
-set qBittorrentLogFilePath="C:\Scripts\Logs\qBittorrent-log.txt"
+set logFilePath="C:\Scripts\Logs\qBittorrent-log.txt"
 rem ********************************************************************************************************
 
 set msgPrefix=[%date% - %time%]
 echo %msgPrefix% interfaceName: %interfaceName%
 echo %msgPrefix% expectedAdapterIP: %expectedAdapterIP%
-echo %msgPrefix% qBittorrentLogFilePath: %qBittorrentLogFilePath%
+echo %msgPrefix% logFilePath: %logFilePath%
 set qBittorrentConfPath=%appdata%\qBittorrent
 echo %msgPrefix% qBittorrentConfPath: %qBittorrentConfPath%
 set qBittorrentConfFilePath=%qBittorrentConfPath%\qBittorrent.ini
@@ -72,7 +72,7 @@ if not errorlevel 1 (
 				set msg=%msgPrefix% qBittorrent is ok :^)
 				echo !msg!
 				rem log to file
-				>> %qBittorrentLogFilePath% echo !msg!
+				>> %logFilePath% echo !msg!
 			) else (
 				rem qBittorrent is not running.. kill it then start it
 				taskkill /f /im "%qBittorrentProcess%"
@@ -80,7 +80,7 @@ if not errorlevel 1 (
 				set msg=%msgPrefix% qBittorrent was not running.. just booted? ..starting it now!
 				echo !msg!
 				rem log to file
-				>> %qBittorrentLogFilePath% echo !msg!
+				>> %logFilePath% echo !msg!
 			)
 		)
 	) else (
@@ -127,7 +127,7 @@ if not errorlevel 1 (
 		set msg=%msgPrefix% Adapter IP changed from !qBittorrentConfInterfaceAddress! to %adapterIP% .. updating config and restarting!
 		echo !msg!
 		rem log to file
-		>> %qBittorrentLogFilePath% echo !msg!
+		>> %logFilePath% echo !msg!
 	)
 ) else (
 	rem adapters assigned ip is invalid.. kill qBittorrent
@@ -136,6 +136,6 @@ if not errorlevel 1 (
 	set msg=%msgPrefix% Adapter IP %adapterIP% doesn't match pattern %expectedAdapterIP% .. stopping qBittorrent :^(
 	echo !msg!
 	rem log to file
-	>> %qBittorrentLogFilePath% echo !msg!
+	>> %logFilePath% echo !msg!
 )
 exit
