@@ -3,8 +3,8 @@ setlocal enabledelayedexpansion
 
 rem ------------------------Setup----------------------------
 rem Select your network interface and current IP in the advanced tab of the qBittorent gui and save
-rem Set interfaceName, expectedAdapterIP & logFilePath below
-rem You can get adapter info by running the following: netsh interface ip show address
+rem Set interfaceName, expectedInterfaceIP & logFilePath below
+rem You can get info about your interfaces by running: netsh interface ip show address
 rem Add a scheduled task to repeat at desired interval i.e. every 2 minutes
 rem Make sure the script has permissions to kill the qBittorent process
 
@@ -13,18 +13,18 @@ rem Before running, take a backup of your qBittorrent.ini from %appdata%\qBittor
 rem qBittorrent should not be set to start up automatically, instead it is brought up by this script
 rem If you are updating your config you may want to disable the script temporarily in case of conflicts
 rem To change the interface you want to bind to you must update this in the gui first
-rem expectedAdapterIP is a pattern that your Adapter IP should begin with when properly connected
+rem expectedInterfaceIP is a pattern that your Interface IP should begin with when properly connected
 rem in my case this is 10.117.*.*
 
 rem ********************************************************************************************************
-set interfaceName=Ethernet 2
-set expectedAdapterIP=10.117
+set interfaceName=Windscribe IKEv2
+set expectedInterfaceIP=10.153
 set logFilePath="C:\Scripts\Logs\qBittorrent-log.txt"
 rem ********************************************************************************************************
 
 set msgPrefix=[%date% - %time%]
 echo %msgPrefix% interfaceName: %interfaceName%
-echo %msgPrefix% expectedAdapterIP: %expectedAdapterIP%
+echo %msgPrefix% expectedInterfaceIP: %expectedInterfaceIP%
 echo %msgPrefix% logFilePath: %logFilePath%
 set qBittorrentConfPath=%appdata%\qBittorrent
 echo %msgPrefix% qBittorrentConfPath: %qBittorrentConfPath%
@@ -35,34 +35,34 @@ echo %msgPrefix% qBittorrentProcess: %qBittorrentProcess%
 set qBittorrentExeFile="%ProgramFiles%\qbittorrent\%qBittorrentProcess%"
 echo %msgPrefix% qBittorrentExeFile: %qBittorrentExeFile%
 
-rem find the ip assigned to the interface
-for /f "tokens=3" %%i in ('netsh interface ip show address "%interfaceName%" ^| findstr "IP Address"') do set adapterIP=%%i
-echo %msgPrefix% adapterIP: %adapterIP%
+rem find the IP assigned to the interface
+for /f "tokens=3" %%i in ('netsh interface ip show address "%interfaceName%" ^| findstr "IP Address"') do set InterfaceIP=%%i
+echo %msgPrefix% InterfaceIP: %InterfaceIP%
 
 rem check if the IP matches the pattern specified.. i.e. avoid updating for 169.*.*.*
-echo.%adapterIP% | find /i "%expectedAdapterIP%" >nul
+echo.%InterfaceIP% | find /i "%expectedInterfaceIP%" >nul
 if not errorlevel 1 (
-	echo %msgPrefix% Adapter IP %adapterIP% matches pattern %expectedAdapterIP% :^)
+	echo %msgPrefix% Interface IP %InterfaceIP% matches pattern %expectedInterfaceIP% :^)
 	
 	rem find the InterfaceAddress line specified in the qBittorrent.conf file
-	for /f "tokens=1" %%i in ('findstr /i "Connection\InterfaceAddress=" %qBittorrentConfFilePath%') do set qBittorrentConfInterfaceAddressLine=%%i
+	for /f "tokens=1" %%i in ('findstr /i "Session\InterfaceAddress=" %qBittorrentConfFilePath%') do set qBittorrentConfInterfaceAddressLine=%%i
 	echo %msgPrefix% qBittorrentConfInterfaceAddressLine: !qBittorrentConfInterfaceAddressLine!
 	
-	rem find the ip address specified in the InterfaceAddress line above
+	rem find the IP address specified in the InterfaceAddress line above
 	for /f "tokens=2 delims=^=" %%a in ("!qBittorrentConfInterfaceAddressLine!") do set qBittorrentConfInterfaceAddress=%%a
 	echo %msgPrefix% qBittorrentConfInterfaceAddress: !qBittorrentConfInterfaceAddress!
 	
 	rem find the InterfaceName line specified in the qBittorrent.conf file
-	for /f "tokens=*" %%i in ('findstr /i "Connection\InterfaceName=" %qBittorrentConfFilePath%') do set qBittorrentConfInterfaceNameLine=%%i
+	for /f "tokens=*" %%i in ('findstr /i "Session\InterfaceName=" %qBittorrentConfFilePath%') do set qBittorrentConfInterfaceNameLine=%%i
 	echo %msgPrefix% qBittorrentConfInterfaceNameLine: !qBittorrentConfInterfaceNameLine!
 	
 	rem find the interface name specified in the InterfaceAddress line above
 	for /f "tokens=2* delims=^=" %%a in ("!qBittorrentConfInterfaceNameLine!") do set qBittorrentConfInterfaceName=%%a
 	echo %msgPrefix% qBittorrentConfInterfaceName: !qBittorrentConfInterfaceName!
 	
-	rem check if the specified ip matches the current ip
-	if !qBittorrentConfInterfaceAddress! == %adapterIP% (
-		rem ips match
+	rem check if the specified IP matches the current IP
+	if !qBittorrentConfInterfaceAddress! == %InterfaceIP% (
+		rem IPs match
 		echo %msgPrefix% qBittorrentConf IP is correct :^)
 		
 		rem check if the qBittorrent process is running
@@ -77,15 +77,15 @@ if not errorlevel 1 (
 				rem qBittorrent is not running.. kill it then start it
 				taskkill /f /im "%qBittorrentProcess%"
 				start "" %qBittorrentExeFile%
-				set msg=%msgPrefix% qBittorrent was not running.. just booted? ..starting it now!
+				set msg=%msgPrefix% qBittorrent was not running.. just booted? ..starting it now^^!
 				echo !msg!
 				rem log to file
 				>> %logFilePath% echo !msg!
 			)
 		)
 	) else (
-		rem ips do not match
-		echo %msgPrefix% qBittorrentConfInterfaceAddress is incorrect.. updating from !qBittorrentConfInterfaceAddress! to %adapterIP% !
+		rem IPs do not match
+		echo %msgPrefix% qBittorrentConfInterfaceAddress is incorrect.. updating from !qBittorrentConfInterfaceAddress! to %InterfaceIP%
 		
 		set dateStamp=%DATE:~6,4%_%DATE:~3,2%_%DATE:~0,2%__%TIME:~0,2%_%TIME:~3,2%_%TIME:~6,2%
 		rem replace spaces with 0s
@@ -109,8 +109,8 @@ if not errorlevel 1 (
 			set line=%%a
 			
 			if /i "!line!"=="!qBittorrentConfInterfaceAddressLine!" (
-				rem found the Interface Address line.. replace it with the new ip
-				echo Connection\InterfaceAddress=!adapterIP!
+				rem found the Interface Address line.. replace it with the new IP
+				echo Session\InterfaceAddress=!InterfaceIP!
 			) else (
 				rem not the interface address line.. just add the line
 				echo !line!
@@ -124,16 +124,16 @@ if not errorlevel 1 (
 		del !tempFilePath!
 		rem start qBittorrent
 		start "" %qBittorrentExeFile%
-		set msg=%msgPrefix% Adapter IP changed from !qBittorrentConfInterfaceAddress! to %adapterIP% .. updating config and restarting!
+		set msg=%msgPrefix% Interface IP changed from !qBittorrentConfInterfaceAddress! to %InterfaceIP% .. updating config and restarting^^!
 		echo !msg!
 		rem log to file
 		>> %logFilePath% echo !msg!
 	)
 ) else (
-	rem adapters assigned ip is invalid.. kill qBittorrent
-  	echo Adapter IP.. %adapterIP% is invalid :(
+	rem interface assigned IP is invalid.. kill qBittorrent
+  	echo Interface IP.. %InterfaceIP% is invalid :(
 	taskkill /f /im %qBittorrentProcess%
-	set msg=%msgPrefix% Adapter IP %adapterIP% doesn't match pattern %expectedAdapterIP% .. stopping qBittorrent :^(
+	set msg=%msgPrefix% Interface IP %InterfaceIP% doesn't match pattern %expectedInterfaceIP% .. stopping qBittorrent :^(
 	echo !msg!
 	rem log to file
 	>> %logFilePath% echo !msg!
